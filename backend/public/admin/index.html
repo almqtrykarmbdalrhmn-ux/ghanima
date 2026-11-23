@@ -1,0 +1,33 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HONEST REWARD Admin</title>
+<style>body{font-family:system-ui;margin:0;background:#050a24;color:#eef1ff}main{max-width:900px;margin:auto;padding:12px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px;border-bottom:1px solid #24336f;text-align:start;word-break:break-all}
+input,select,button{padding:8px;margin:2px;border-radius:8px;border:1px solid #24336f;background:#0e1740;color:#eef1ff}button{background:#f7c948;color:#1b1500;font-weight:700;cursor:pointer}.card{background:#0e1740;border:1px solid #24336f;border-radius:12px;padding:10px;margin:10px 0;overflow-x:auto}#err{background:#d62839;color:#fff;padding:8px;border-radius:8px;display:none}</style></head><body><main>
+<h3>HONEST REWARD · Admin</h3><div id="err"></div><div id="login" class="card"><input id="em" placeholder="admin email"><input id="pw" type="password" placeholder="password"><button onclick="login()">Log in</button></div>
+<div id="app" hidden><div class="card" id="stats"></div><div class="card"><b>Orders</b> <button onclick="notif()">Enable desktop alerts</button><div id="orders"></div></div>
+<div class="card"><b>Users</b> <input id="q" placeholder="email or account ID"><button onclick="users()">Search</button><div id="users"></div></div>
+<div class="card" id="ledc" hidden></div>
+<div class="card"><b>Packages</b><div id="pk"></div><select id="ng"><option>pubg</option><option>freefire</option></select><input id="na" placeholder="amount" size=6><input id="np" placeholder="points" size=7><button onclick="addPk()">Add</button></div>
+<div class="card"><b>Settings</b> daily ad limit <input id="lim" size=6><button onclick="setS('daily_ad_limit',lim.value)">Save</button> ads enabled <select id="ae"><option>false</option><option>true</option></select><button onclick="setS('ads_enabled',ae.value)">Save</button></div></div></main>
+<script>
+let T=sessionStorage.getItem('t'),seen=null;const $=i=>document.getElementById(i),E=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+function bad(m){const e=$('err');e.textContent=m;e.style.display='block';setTimeout(()=>e.style.display='none',4000)}
+async function api(p,m='GET',b){const r=await fetch(p,{method:m,headers:{'Content-Type':'application/json',Authorization:'Bearer '+T},body:b?JSON.stringify(b):undefined});
+ if(!r.ok){let j={};try{j=await r.json()}catch{}throw new Error(j.error||('HTTP '+r.status))}return r.status==204?null:r.json()}
+async function login(){try{const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em.value,password:pw.value})});if(!r.ok)throw new Error('bad credentials or not registered');let j=await r.json();if(j.step=='admin_code'){const code=prompt('Admin code');const r2=await fetch('/auth/admin-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pre:j.pre,code})});if(!r2.ok)throw new Error('bad code');j=await r2.json()}T=j.token;sessionStorage.setItem('t',T);await start()}catch(e){bad(e.message)}}
+async function start(){try{await api('/admin/stats');$('login').hidden=true;$('app').hidden=false;load();setInterval(orders,10000)}catch(e){sessionStorage.removeItem('t');bad('Not authorized')}}
+async function load(){stats();orders();users();pk()}
+async function stats(){const s=await api('/admin/stats');$('stats').innerHTML=`Issued: ${s.issued} · Redeemed: ${s.redeemed} · Open orders: ${s.open_orders} · Users: ${s.users}`}
+async function orders(){try{const o=await api('/admin/orders');const ids=o.map(x=>x.id);if(seen&&Notification.permission=='granted')ids.filter(i=>!seen.includes(i)).forEach(i=>new Notification('New recharge order',{body:i}));seen=ids;
+ $('orders').innerHTML='<table><tr><th>ID<th>User<th>Game<th>Player<th>Pts<th>Status<th></tr>'+o.map(x=>`<tr><td>${E(x.id)}<td>${E(x.email)} <button onclick="led('${E(x.user_id)}')">history</button><td>${E(x.game)} ${E(x.amount)}<td>${E(x.player_id)} ${E(x.server)}<td>${x.cost}<td>${E(x.status)}<td>${['completed','rejected'].includes(x.status)?'':['under_review','processing','completed','rejected'].map(s=>`<button onclick="st('${E(x.id)}','${s}')">${s}</button>`).join('')}`).join('')+'</table>'}catch(e){bad(e.message)}}
+async function st(id,s){if(!confirm(s+'?'))return;try{await api('/admin/orders/'+id+'/status','POST',{status:s});load()}catch(e){bad(e.message)}}
+async function users(){try{const u=await api('/admin/users?q='+encodeURIComponent($('q').value));$('users').innerHTML='<table>'+u.map(x=>`<tr><td>${E(x.id)}<td>${E(x.email)}<td>${E(x.role)}<td>${x.balance}<td><button onclick="led('${E(x.id)}')">ledger</button><button onclick="adj('${E(x.id)}')">±pts</button><button onclick="nt('${E(x.id)}')">notify</button>`).join('')+'</table>'}catch(e){bad(e.message)}}
+async function adj(id){const a=prompt('Points (+/-)'),r=prompt('Reason');if(!a||!r)return;try{await api('/admin/users/'+id+'/adjust','POST',{amount:a,reason:r});load()}catch(e){bad(e.message)}}
+async function nt(id){const t=prompt('Title'),b=prompt('Message');if(!t)return;try{await api('/admin/notify','POST',{user_id:id,title:t,body:b})}catch(e){bad(e.message)}}
+async function pk(){try{const p=await api('/admin/packages');$('pk').innerHTML='<table>'+p.map(x=>`<tr><td>${x.game}<td><input id="a${x.id}" value="${x.amount}" size=6><td><input id="p${x.id}" value="${x.price_points}" size=7><td><input type=checkbox id="c${x.id}" ${x.active?'checked':''}><td><button onclick="savePk(${x.id})">Save</button><button onclick="disPk(${x.id})">Disable</button>`).join('')+'</table>'}catch(e){bad(e.message)}}
+async function savePk(i){try{await api('/admin/packages/'+i,'PUT',{amount:+$('a'+i).value,price_points:+$('p'+i).value,active:$('c'+i).checked});pk()}catch(e){bad(e.message)}}
+async function disPk(i){try{await api('/admin/packages/'+i,'DELETE');pk()}catch(e){bad(e.message)}}
+async function addPk(){try{await api('/admin/packages','POST',{game:ng.value,amount:+na.value,price_points:+np.value});pk()}catch(e){bad(e.message)}}
+async function setS(k,v){try{await api('/admin/settings/'+k,'PUT',{value:v});bad('Saved')}catch(e){bad(e.message)}}
+async function led(id){try{const l=await api('/admin/users/'+id+'/ledger');const c=$('ledc');c.hidden=false;c.innerHTML='<b>Ledger</b> <button onclick="this.parentNode.hidden=true">x</button><table>'+l.map(x=>`<tr><td>${x.id}<td>${E(x.kind)}<td>${x.amount}<td>${E(x.ref)}<td>${E(x.created_at)}`).join('')+'</table>';c.scrollIntoView()}catch(e){bad(e.message)}}
+function notif(){Notification.requestPermission()}
+if(T)start()
+</script></body></html>

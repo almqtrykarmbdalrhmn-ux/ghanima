@@ -1,0 +1,1 @@
+{"name":"honest-reward-backend","type":"module","scripts":{"start":"node src/server.js","test":"node --test test/ssv.test.js"},"dependencies":{"express":"^4.19.2","pg":"^8.11.5","bcryptjs":"^2.4.3","jsonwebtoken":"^9.0.2","nodemailer":"^6.9.13","firebase-admin":"^12.1.0"}}
