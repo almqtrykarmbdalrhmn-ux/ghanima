@@ -1,4 +1,4 @@
-package com.honestreward.app
+                       package com.honestreward.app
 
 import android.app.Activity
 import android.content.Intent
@@ -218,7 +218,7 @@ const val SUPPORT_EMAIL = "almqtrykarmbdalrhmn@gmail.com"
                     }
                     override fun onAdFailedToLoad(e: LoadAdError) {
                         overlay = null
-                        note = tr("لديك مكافأة سابقة، حاول لاحقاً بعد بضع دقائق أو ساعات", "You already have a previous reward, try again in a few minutes or hours")
+                        note = tr("لديك مكافأة سابقة، حاول لاحقاً بعد بضع دقائق أو ساعات", "You already have a previous reward, try again in a few minutes or hours") + "\n[AdMob " + e.code + ": " + e.message + "]"
                     }
                 })
             }
