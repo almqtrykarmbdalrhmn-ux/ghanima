@@ -3,6 +3,8 @@ on: [push, workflow_dispatch]
 jobs:
   apk:
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -12,3 +14,15 @@ jobs:
       - run: gradle -p android :app:assembleDebug -PAPI_BASE_URL=${{ vars.API_BASE_URL || 'https://considerate-acceptance-production-867696b9.up.railway.app' }}
       - uses: actions/upload-artifact@v4
         with: { name: honest-reward-debug-apk, path: android/app/build/outputs/apk/debug/*.apk }
+      - name: Build signed AAB for Google Play
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" gradle -p android :app:bundleRelease -PAPI_BASE_URL=${{ vars.API_BASE_URL || 'https://considerate-acceptance-production-867696b9.up.railway.app' }}
+      - uses: actions/upload-artifact@v4
+        if: ${{ hashFiles('android/app/build/outputs/bundle/release/*.aab') != '' }}
+        with: { name: ghanima-release-aab, path: android/app/build/outputs/bundle/release/*.aab }
