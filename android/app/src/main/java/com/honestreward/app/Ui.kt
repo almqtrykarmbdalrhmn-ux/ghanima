@@ -34,19 +34,18 @@ fun JSONObject.num(k: String) = optString(k, "0").toLongOrNull() ?: 0L
 class Msg(val text: String, val err: Boolean)
 object Toast {
     var msg by mutableStateOf<Msg?>(null)
-    fun err(t: String) { msg = Msg(t, true) }
+    fun err(t: String) { if (t.isNotBlank()) msg = Msg(t, true) }
     fun ok(t: String) { msg = Msg(t, false) }
 }
 
-/** Fully closes the app and opens it again from the start. */
+/** Restarts the app screen from the very beginning (splash, session, data reload). */
 fun restartApp(ctx: Context) {
-    val i = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
-    if (i != null) {
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        ctx.startActivity(i)
-    }
-    (ctx as? Activity)?.finishAffinity()
-    Runtime.getRuntime().exit(0)
+    Toast.msg = null
+    val act = ctx as? Activity
+    if (act != null) { act.recreate(); return }
+    val i = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName) ?: return
+    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    ctx.startActivity(i)
 }
 
 /** Classic error box in the middle of the screen: red title bar, red message, and a "Restart app" button in the app style. */
@@ -84,6 +83,8 @@ fun restartApp(ctx: Context) {
 }
 
 fun errText(e: Throwable): String {
+    // A screen left while its request was running (e.g. quick tab switch): not an error, show nothing.
+    if (e is java.util.concurrent.CancellationException) return ""
     if (e is ApiError) {
         if (e.code == 401 && (e.message ?: "").startsWith("HTTP")) return tr("انتهت الجلسة، سجّل الدخول من جديد", "Session expired, please log in again")
         return when (e.message) {
