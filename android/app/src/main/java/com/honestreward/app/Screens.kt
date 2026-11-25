@@ -361,6 +361,10 @@ const val SUPPORT_EMAIL = "almqtrykarmbdalrhmn@gmail.com"
             ctx.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL")))
         }
         OutlinedButton(openTerms, Modifier.fillMaxWidth()) { Text(tr("الشروط والقواعد", "Terms and rules")) }
+        OutlinedButton({
+            try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://almqtrykarmbdalrhmn-ux.github.io/ghanima/privacy.html"))) }
+            catch (e: Exception) { Toast.err(tr("تعذر فتح الرابط", "Could not open the link")) }
+        }, Modifier.fillMaxWidth()) { Text(tr("سياسة الخصوصية", "Privacy Policy")) }
         OutlinedButton(logout, Modifier.fillMaxWidth()) { Text(tr("تسجيل الخروج", "Log out")) }
     }
 }
