@@ -23,21 +23,51 @@ import androidx.compose.ui.unit.dp
     Canvas(Modifier.fillMaxSize()) {
         val w = size.width
         val h = size.height
-        val a = if (Pal.dark) 0.20f else 0.12f
-        drawCircle(PURPLE.copy(alpha = a), 130.dp.toPx(), Offset(w * 0.92f, h * 0.10f))
-        drawCircle(CYAN.copy(alpha = a), 80.dp.toPx(), Offset(w * 0.05f, h * 0.28f))
-        drawCircle(MAROON.copy(alpha = a), 110.dp.toPx(), Offset(w * 0.10f, h * 0.92f))
-        drawCircle(BLUE.copy(alpha = a * 0.8f), 60.dp.toPx(), Offset(w * 0.88f, h * 0.70f))
-        rotate(25f, Offset(w * 0.75f, h * 0.45f)) {
-            drawRoundRect(BLUE.copy(alpha = a), Offset(w * 0.62f, h * 0.38f), Size(w * 0.28f, w * 0.28f), CornerRadius(26.dp.toPx()))
+        if (Pal.dark) {
+            // Deep indigo/purple night sky: soft glowing orbs, faint rounded squares, small stars and two sparkles.
+            fun glow(c: Offset, r: Float, col: Color, a: Float) {
+                drawCircle(brush = Brush.radialGradient(listOf(col.copy(alpha = a), Color.Transparent), center = c, radius = r), radius = r, center = c)
+            }
+            glow(Offset(w * 0.12f, h * 0.06f), 150.dp.toPx(), Color.White, 0.50f)
+            glow(Offset(w * 0.92f, h * 0.94f), 180.dp.toPx(), Color(0xFFE0B8FF), 0.45f)
+            glow(Offset(w * 1.00f, h * 0.55f), 210.dp.toPx(), Color(0xFF9B3FD6), 0.35f)
+            glow(Offset(w * 0.00f, h * 0.42f), 200.dp.toPx(), Color(0xFF6D3DE8), 0.30f)
+            rotate(16f, Offset(w * 0.86f, h * 0.10f)) {
+                drawRoundRect(Color.White.copy(alpha = 0.07f), Offset(w * 0.74f, h * 0.05f), Size(w * 0.24f, w * 0.24f), CornerRadius(22.dp.toPx()))
+            }
+            rotate(-14f, Offset(w * 0.12f, h * 0.80f)) {
+                drawRoundRect(Color.White.copy(alpha = 0.07f), Offset(w * 0.02f, h * 0.74f), Size(w * 0.26f, w * 0.26f), CornerRadius(24.dp.toPx()))
+            }
+            rotate(8f, Offset(w * 0.96f, h * 0.36f)) {
+                drawRoundRect(Color.White.copy(alpha = 0.06f), Offset(w * 0.88f, h * 0.32f), Size(w * 0.20f, w * 0.20f), CornerRadius(18.dp.toPx()))
+            }
+            val stars = listOf(
+                Offset(0.06f, 0.03f), Offset(0.27f, 0.015f), Offset(0.46f, 0.03f), Offset(0.80f, 0.02f), Offset(0.95f, 0.14f),
+                Offset(0.04f, 0.26f), Offset(0.90f, 0.30f), Offset(0.18f, 0.58f), Offset(0.97f, 0.62f), Offset(0.08f, 0.88f),
+                Offset(0.50f, 0.97f), Offset(0.78f, 0.84f), Offset(0.34f, 0.74f), Offset(0.62f, 0.12f), Offset(0.70f, 0.52f)
+            )
+            stars.forEachIndexed { i, p ->
+                drawCircle(Color.White.copy(alpha = if (i % 3 == 0) 0.90f else 0.60f), (if (i % 4 == 0) 2.6f else 1.8f).dp.toPx(), Offset(w * p.x, h * p.y))
+            }
+            sparkle(Offset(w * 0.28f, h * 0.16f), 11.dp.toPx(), Color(0xFFA5E1FF).copy(alpha = 0.85f))
+            sparkle(Offset(w * 0.74f, h * 0.22f), 11.dp.toPx(), Color(0xFFA5E1FF).copy(alpha = 0.85f))
+        } else {
+            val a = 0.12f
+            drawCircle(PURPLE.copy(alpha = a), 130.dp.toPx(), Offset(w * 0.92f, h * 0.10f))
+            drawCircle(CYAN.copy(alpha = a), 80.dp.toPx(), Offset(w * 0.05f, h * 0.28f))
+            drawCircle(MAROON.copy(alpha = a), 110.dp.toPx(), Offset(w * 0.10f, h * 0.92f))
+            drawCircle(BLUE.copy(alpha = a * 0.8f), 60.dp.toPx(), Offset(w * 0.88f, h * 0.70f))
+            rotate(25f, Offset(w * 0.75f, h * 0.45f)) {
+                drawRoundRect(BLUE.copy(alpha = a), Offset(w * 0.62f, h * 0.38f), Size(w * 0.28f, w * 0.28f), CornerRadius(26.dp.toPx()))
+            }
+            rotate(-18f, Offset(w * 0.2f, h * 0.55f)) {
+                drawRoundRect(MAROON.copy(alpha = a), Offset(w * 0.08f, h * 0.48f), Size(w * 0.24f, w * 0.24f), CornerRadius(22.dp.toPx()))
+            }
+            val t1 = Path().apply { moveTo(w * 0.5f, h * 0.05f); lineTo(w * 0.7f, h * 0.17f); lineTo(w * 0.35f, h * 0.20f); close() }
+            drawPath(t1, CYAN.copy(alpha = a))
+            val t2 = Path().apply { moveTo(w * 0.55f, h * 0.86f); lineTo(w * 0.85f, h * 0.95f); lineTo(w * 0.45f, h * 0.98f); close() }
+            drawPath(t2, PURPLE.copy(alpha = a))
         }
-        rotate(-18f, Offset(w * 0.2f, h * 0.55f)) {
-            drawRoundRect(MAROON.copy(alpha = a), Offset(w * 0.08f, h * 0.48f), Size(w * 0.24f, w * 0.24f), CornerRadius(22.dp.toPx()))
-        }
-        val t1 = Path().apply { moveTo(w * 0.5f, h * 0.05f); lineTo(w * 0.7f, h * 0.17f); lineTo(w * 0.35f, h * 0.20f); close() }
-        drawPath(t1, CYAN.copy(alpha = a))
-        val t2 = Path().apply { moveTo(w * 0.55f, h * 0.86f); lineTo(w * 0.85f, h * 0.95f); lineTo(w * 0.45f, h * 0.98f); close() }
-        drawPath(t2, PURPLE.copy(alpha = a))
     }
 }
 

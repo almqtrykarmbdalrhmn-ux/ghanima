@@ -1,4 +1,4 @@
-                       package com.honestreward.app
+package com.honestreward.app
 
 import android.app.Activity
 import android.content.Intent
@@ -54,7 +54,7 @@ const val SUPPORT_EMAIL = "almqtrykarmbdalrhmn@gmail.com"
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             GiftLogo(132.dp)
             Spacer(Modifier.height(16.dp))
-            Text(tr("غنيمة", "Ghanima"), color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.ExtraBold)
+            Text(APP_NAME, color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.ExtraBold)
         }
     }
 }
@@ -72,7 +72,7 @@ const val SUPPORT_EMAIL = "almqtrykarmbdalrhmn@gmail.com"
     if (terms) { TermsScreen { terms = false }; return }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         GiftLogo(96.dp)
-        Text(tr("غنيمة", "Ghanima"), color = Pal.text, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
+        Text(APP_NAME, color = Pal.text, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
         Spacer(Modifier.height(14.dp))
         GlassCard {
             Text(if (reg) tr("إنشاء حساب", "Create account") else tr("تسجيل الدخول", "Log in"), color = Pal.text, fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -143,7 +143,7 @@ const val SUPPORT_EMAIL = "almqtrykarmbdalrhmn@gmail.com"
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             GiftLogo(46.dp); Spacer(Modifier.width(10.dp))
-            Text(tr("غنيمة", "Ghanima"), color = Pal.text, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+            Text(APP_NAME, color = Pal.text, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
         }
         Box(Modifier.fillMaxWidth().background(Brush.linearGradient(BRAND), RoundedCornerShape(28.dp)).padding(22.dp)) {
             Column {
@@ -393,8 +393,8 @@ const val SUPPORT_EMAIL = "almqtrykarmbdalrhmn@gmail.com"
     var msgFor by remember { mutableStateOf<JSONObject?>(null) }
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
-    suspend fun load() { try { orders = Api.arr("GET", "/admin/orders").list() } catch (e: Exception) { Toast.err(errText(e)) } }
-    LaunchedEffect(Unit) { while (true) { load(); delay(15000) } }
+    suspend fun load(silent: Boolean = false) { try { orders = Api.arr("GET", "/admin/orders").list() } catch (e: Exception) { if (!silent) Toast.err(errText(e)) } }
+    LaunchedEffect(Unit) { while (true) { load(true); delay(15000) } }
     Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(tr("لوحة الإدارة", "Admin panel"), color = Pal.text, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, modifier = Modifier.weight(1f))

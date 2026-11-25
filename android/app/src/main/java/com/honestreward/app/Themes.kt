@@ -10,6 +10,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 
+const val APP_NAME = "Ghanima Games"
+
 // Brand palette: maroon, electric purple, electric blue, cyan (no gold / navy)
 val MAROON = Color(0xFF8E1B4A)
 val PURPLE = Color(0xFF7C3AED)
@@ -23,10 +25,10 @@ object Pal {
     val soft: Color get() = if (dark) Color(0xFFCDB8E6) else Color(0xFF6B5E86)
     val glass: Color get() = if (dark) Color.White.copy(alpha = 0.09f) else Color.White.copy(alpha = 0.72f)
     val glassBorder: Color get() = if (dark) Color.White.copy(alpha = 0.16f) else PURPLE.copy(alpha = 0.18f)
-    val bgTop: Color get() = if (dark) Color(0xFF2E0A1B) else Color.White
-    val bgBottom: Color get() = if (dark) Color(0xFF1A0510) else Color(0xFFFAF7FF)
-    val dialog: Color get() = if (dark) Color(0xFF2B1030) else Color.White
-    fun load(ctx: Context) { dark = ctx.getSharedPreferences("hr", Context.MODE_PRIVATE).getBoolean("dark", false) }
+    val bgTop: Color get() = if (dark) Color(0xFF150F4F) else Color.White
+    val bgBottom: Color get() = if (dark) Color(0xFF2A1160) else Color(0xFFFAF7FF)
+    val dialog: Color get() = if (dark) Color(0xFF231A5E) else Color.White
+    fun load(ctx: Context) { dark = ctx.getSharedPreferences("hr", Context.MODE_PRIVATE).getBoolean("dark", true) }
     fun set(ctx: Context, v: Boolean) { dark = v; ctx.getSharedPreferences("hr", Context.MODE_PRIVATE).edit().putBoolean("dark", v).apply() }
 }
 

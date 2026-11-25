@@ -1,5 +1,8 @@
 package com.honestreward.app
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,9 +17,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
@@ -32,11 +38,48 @@ object Toast {
     fun ok(t: String) { msg = Msg(t, false) }
 }
 
+/** Fully closes the app and opens it again from the start. */
+fun restartApp(ctx: Context) {
+    val i = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
+    if (i != null) {
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        ctx.startActivity(i)
+    }
+    (ctx as? Activity)?.finishAffinity()
+    Runtime.getRuntime().exit(0)
+}
+
+/** Classic error box in the middle of the screen: red title bar, red message, and a "Restart app" button in the app style. */
+@Composable fun ErrorDialog(m: Msg, onClose: () -> Unit) {
+    val ctx = LocalContext.current
+    val shape = RoundedCornerShape(4.dp)
+    Dialog(onDismissRequest = onClose) {
+        Column(Modifier.fillMaxWidth().background(Pal.dialog, shape).border(2.dp, RED, shape)) {
+            Box(Modifier.fillMaxWidth().background(RED).padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Text(tr("حدث خطأ ما", "Something went wrong"), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+            }
+            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(m.text, color = RED, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(10.dp))
+                Text(tr("أعد تشغيل التطبيق وحاول مرة أخرى", "Restart the app and try again"), color = Pal.text, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(16.dp))
+                GradButton(tr("إعادة تشغيل التطبيق", "Restart the app")) { restartApp(ctx) }
+                Spacer(Modifier.height(6.dp))
+                TextButton(onClose, Modifier.fillMaxWidth()) { Text(tr("إغلاق", "Close"), color = Pal.soft) }
+            }
+        }
+    }
+}
+
 @Composable fun Banner() {
     Toast.msg?.let { m ->
-        Text(m.text, color = Color.White, modifier = Modifier.fillMaxWidth().padding(8.dp)
-            .background(if (m.err) RED else Color(0xFF16A34A), RoundedCornerShape(14.dp)).padding(12.dp))
-        LaunchedEffect(m) { delay(4000); if (Toast.msg === m) Toast.msg = null }
+        if (m.err) {
+            ErrorDialog(m) { if (Toast.msg === m) Toast.msg = null }
+        } else {
+            Text(m.text, color = Color.White, modifier = Modifier.fillMaxWidth().padding(8.dp)
+                .background(Color(0xFF16A34A), RoundedCornerShape(14.dp)).padding(12.dp))
+            LaunchedEffect(m) { delay(4000); if (Toast.msg === m) Toast.msg = null }
+        }
     }
 }
 

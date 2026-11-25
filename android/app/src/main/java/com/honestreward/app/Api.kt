@@ -7,7 +7,10 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.net.ConnectException
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.net.URL
 
 class ApiError(message: String, val code: Int = 0) : Exception(message)
@@ -34,6 +37,8 @@ object Api {
         val c = URL(BuildConfig.API_BASE_URL.trimEnd('/') + path).openConnection() as HttpURLConnection
         try {
             c.requestMethod = method; c.connectTimeout = 20000; c.readTimeout = 30000
+            c.useCaches = false
+            c.setRequestProperty("Connection", "close") // never reuse an old pooled connection that the server may have already closed
             c.setRequestProperty("Content-Type", "application/json")
             token?.let { c.setRequestProperty("Authorization", "Bearer $it") }
             if (body != null) { c.doOutput = true; c.outputStream.use { it.write(body.toString().toByteArray()) } }
@@ -48,13 +53,20 @@ object Api {
         } finally { c.disconnect() }
     }
 
-    // GET requests are retried (slow/cold server); POSTs are never retried to avoid double actions.
+    // GET requests are retried (slow/cold server). A POST is retried only when the request cannot have reached
+    // the server (connection could not be opened), so an action is never applied twice.
     suspend fun call(method: String, path: String, body: JSONObject? = null): Any? = withContext(Dispatchers.IO) {
         var last: IOException? = null
-        val tries = if (method == "GET") 3 else 1
+        val tries = if (method == "GET") 3 else 2
         for (i in 1..tries) {
             try { return@withContext once(method, path, body) }
-            catch (e: IOException) { last = e; if (i < tries) delay(1500) }
+            catch (e: IOException) {
+                last = e
+                val notSent = e is ConnectException || e is UnknownHostException || (e is SocketTimeoutException && (e.message ?: "").startsWith("failed to connect"))
+                val retryable = method == "GET" || notSent
+                if (!retryable || i == tries) break
+                delay(1500)
+            }
         }
         throw last ?: IOException("network error")
     }
