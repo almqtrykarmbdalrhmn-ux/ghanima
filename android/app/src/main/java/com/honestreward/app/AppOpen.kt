@@ -6,7 +6,6 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.appopen.AppOpenAd
-import com.google.android.gms.ads.appopen.AppOpenAdLoadCallback
 
 /**
  * "App open" ad shown when the app is opened. Switched on/off from the admin panel (setting app_open_enabled),
@@ -28,7 +27,7 @@ object AppOpen {
         val now = System.currentTimeMillis()
         if (p.getLong("first_open", 0L) == 0L) { p.edit().putLong("first_open", now).apply(); return }
         if (now - p.getLong("app_open_last", 0L) < GAP_MS) return
-        AppOpenAd.load(act, unit, AdRequest.Builder().build(), object : AppOpenAdLoadCallback() {
+        AppOpenAd.load(act, unit, AdRequest.Builder().build(), object : AppOpenAd.AppOpenAdLoadCallback() {
             override fun onAdLoaded(ad: AppOpenAd) {
                 if (act.isFinishing || act.isDestroyed || System.currentTimeMillis() - startedAt > MAX_WAIT_MS + 4000L) return
                 ad.fullScreenContentCallback = object : FullScreenContentCallback() {
