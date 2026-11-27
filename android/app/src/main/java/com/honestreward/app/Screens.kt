@@ -3,6 +3,25 @@ package com.honestreward.app
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -49,12 +68,46 @@ import org.json.JSONObject
 const val SUPPORT_EMAIL = "almqtrykarmbdalrhmn@gmail.com"
 
 @Composable fun Splash(done: () -> Unit) {
-    LaunchedEffect(Unit) { delay(1500); done() }
-    Box(Modifier.fillMaxSize().background(Brush.linearGradient(BRAND)), contentAlignment = Alignment.Center) {
+    LaunchedEffect(Unit) { delay(2800); done() }
+    val enter = remember { Animatable(0f) }
+    val txt = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { enter.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessLow)) }
+    LaunchedEffect(Unit) { delay(650); txt.animateTo(1f, tween(800, easing = FastOutSlowInEasing)) }
+    val inf = rememberInfiniteTransition(label = "splash")
+    val t by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(4000, easing = LinearEasing)), label = "t")
+    val pulse by inf.animateFloat(0.88f, 1.12f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
+    val bob by inf.animateFloat(-7f, 7f, infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "bob")
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Image(painterResource(R.drawable.ghanima_bg), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            GiftLogo(132.dp)
-            Spacer(Modifier.height(16.dp))
-            Text(APP_NAME, color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.ExtraBold)
+            Box(Modifier.size(300.dp), contentAlignment = Alignment.Center) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val c = center
+                    val e = enter.value.coerceIn(0f, 1f)
+                    val r = 120.dp.toPx() * pulse
+                    drawCircle(Brush.radialGradient(listOf(CYAN.copy(alpha = 0.38f * e), PURPLE.copy(alpha = 0.18f * e), Color.Transparent), c, r * 1.3f), r * 1.3f, c)
+                    for (i in 0 until 10) {
+                        val a = (t + i / 10f) * 2f * PI.toFloat()
+                        val rx = 128.dp.toPx() + (if (i % 2 == 0) 8.dp.toPx() else -4.dp.toPx())
+                        val ry = 112.dp.toPx() + (if (i % 2 == 0) -6.dp.toPx() else 6.dp.toPx())
+                        val tw = sin((t * 3f + i * 0.37f) * 2f * PI.toFloat()) * 0.5f + 0.5f
+                        sparkle(Offset(c.x + cos(a) * rx, c.y + sin(a) * ry), (3f + 7f * tw).dp.toPx(), (if (i % 3 == 0) CYAN else Color.White).copy(alpha = (0.25f + 0.75f * tw) * e))
+                    }
+                }
+                GiftLogo(132.dp, Modifier.graphicsLayer {
+                    val sc = enter.value
+                    scaleX = sc; scaleY = sc
+                    alpha = enter.value.coerceIn(0f, 1f)
+                    translationY = bob.dp.toPx()
+                    rotationZ = (1f - enter.value.coerceIn(0f, 1f)) * -25f + sin(t * 2f * PI.toFloat()) * 2.5f
+                })
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(APP_NAME, color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.graphicsLayer { alpha = txt.value; translationY = (1f - txt.value) * 30.dp.toPx() })
+            Spacer(Modifier.height(6.dp))
+            Text(tr("اربح · استبدل · استمتع", "Earn · Redeem · Enjoy"), color = CYAN, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.graphicsLayer { alpha = txt.value; translationY = (1f - txt.value) * 40.dp.toPx() })
         }
     }
 }

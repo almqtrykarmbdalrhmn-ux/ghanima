@@ -6,6 +6,7 @@ android {
         applicationId = "com.ghanima.games"; minSdk = 24; targetSdk = 34; versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1); versionName = "0.1"
         buildConfigField("String", "API_BASE_URL", "\"${prop("API_BASE_URL")}\"")
         buildConfigField("String", "ADMOB_REWARDED_UNIT", "\"${if (prop("ADMOB_TEST_MODE") == "true") "ca-app-pub-3940256099942544/5224354917" else prop("ADMOB_REWARDED_UNIT")}\"")
+        buildConfigField("String", "ADMOB_APP_OPEN_UNIT", "\"${if (prop("ADMOB_TEST_MODE") == "true") "ca-app-pub-3940256099942544/9257395921" else ((findProperty("ADMOB_APP_OPEN_UNIT") as String?) ?: "")}\"")
         manifestPlaceholders["ADMOB_APP_ID"] = prop("ADMOB_APP_ID")
     }
     signingConfigs {

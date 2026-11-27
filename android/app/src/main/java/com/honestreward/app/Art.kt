@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.dp
     }
 }
 
-private fun DrawScope.sparkle(c: Offset, r: Float, color: Color) {
+internal fun DrawScope.sparkle(c: Offset, r: Float, color: Color) {
     val p = Path().apply {
         moveTo(c.x, c.y - r); lineTo(c.x + r * 0.28f, c.y - r * 0.28f); lineTo(c.x + r, c.y); lineTo(c.x + r * 0.28f, c.y + r * 0.28f)
         lineTo(c.x, c.y + r); lineTo(c.x - r * 0.28f, c.y + r * 0.28f); lineTo(c.x - r, c.y); lineTo(c.x - r * 0.28f, c.y - r * 0.28f); close()
@@ -59,8 +59,8 @@ private fun DrawScope.sparkle(c: Offset, r: Float, color: Color) {
 }
 
 /** App logo: white gift box with an electric-blue ribbon and cyan sparkles on the maroon-purple-blue gradient. */
-@Composable fun GiftLogo(s: Dp) {
-    Image(painterResource(R.drawable.ghanima_logo), contentDescription = null, modifier = Modifier.size(s).clip(RoundedCornerShape(s * 0.2f)))
+@Composable fun GiftLogo(s: Dp, modifier: Modifier = Modifier) {
+    Image(painterResource(R.drawable.ghanima_logo), contentDescription = null, modifier = modifier.size(s))
 }
 
 /** Original illustrations for the store cards (no official game logos, no currency symbols). */

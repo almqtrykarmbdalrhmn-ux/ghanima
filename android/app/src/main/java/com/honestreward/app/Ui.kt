@@ -3,10 +3,15 @@ package com.honestreward.app
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -23,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
@@ -31,10 +38,12 @@ val RED = Color(0xFFD62839)
 fun JSONArray.list(): List<JSONObject> = List(length()) { getJSONObject(it) }
 fun JSONObject.num(k: String) = optString(k, "0").toLongOrNull() ?: 0L
 
-class Msg(val text: String, val err: Boolean)
+class Msg(val text: String, val err: Boolean, val restart: Boolean = false)
 object Toast {
     var msg by mutableStateOf<Msg?>(null)
-    fun err(t: String) { if (t.isNotBlank()) msg = Msg(t, true) }
+    /** Connection / server failures offer "restart the app"; normal input errors (wrong password...) only say what is wrong. */
+    private fun isConnection(t: String) = t.startsWith("تعذر الاتصال بالخادم") || t.startsWith("Could not reach the server") || t.startsWith("HTTP")
+    fun err(t: String) { if (t.isNotBlank()) msg = Msg(t, true, isConnection(t)) }
     fun ok(t: String) { msg = Msg(t, false) }
 }
 
@@ -48,38 +57,54 @@ fun restartApp(ctx: Context) {
     ctx.startActivity(i)
 }
 
-/** Classic error box in the middle of the screen: red title bar, red message, and a "Restart app" button in the app style. */
-@Composable fun ErrorDialog(m: Msg, onClose: () -> Unit) {
+/** Centered message card (errors and successes): round icon, title, text and a button; pops in with a small spring. */
+@Composable fun MessageDialog(m: Msg, onClose: () -> Unit) {
     val ctx = LocalContext.current
-    val shape = RoundedCornerShape(4.dp)
-    Dialog(onDismissRequest = onClose) {
-        Column(Modifier.fillMaxWidth().background(Pal.dialog, shape).border(2.dp, RED, shape)) {
-            Box(Modifier.fillMaxWidth().background(RED).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Text(tr("حدث خطأ ما", "Something went wrong"), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+    val accent = if (m.err) (if (Pal.dark) Color(0xFFFF5C70) else RED) else Color(0xFF22C55E)
+    val shape = RoundedCornerShape(28.dp)
+    val pop = remember { Animatable(0.82f) }
+    val fade = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { pop.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium)) }
+    LaunchedEffect(Unit) { fade.animateTo(1f, tween(180)) }
+    if (!m.err) LaunchedEffect(m) { delay(3000); onClose() }
+    val main = if (m.restart) m.text.substringBefore(" (") else m.text
+    val detail = if (m.restart && m.text.contains(" (")) m.text.substringAfter(" (").removeSuffix(")") else ""
+    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            Modifier.padding(horizontal = 30.dp).fillMaxWidth()
+                .graphicsLayer { scaleX = pop.value; scaleY = pop.value; alpha = fade.value }
+                .background(Pal.dialog, shape).border(1.5.dp, accent.copy(alpha = 0.75f), shape).padding(horizontal = 22.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(Modifier.size(64.dp).background(Brush.linearGradient(listOf(accent, accent.copy(alpha = 0.6f))), CircleShape), contentAlignment = Alignment.Center) {
+                Text(if (m.err) "!" else "\u2713", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
             }
-            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(m.text, color = RED, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(10.dp))
-                Text(tr("أعد تشغيل التطبيق وحاول مرة أخرى", "Restart the app and try again"), color = Pal.text, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(16.dp))
-                GradButton(tr("إعادة تشغيل التطبيق", "Restart the app")) { restartApp(ctx) }
+            Spacer(Modifier.height(14.dp))
+            Text(
+                if (!m.err) tr("تمت العملية", "Done") else if (m.restart) tr("حدث خطأ ما", "Something went wrong") else tr("تنبيه", "Notice"),
+                color = accent, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(main, color = Pal.text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            if (m.restart) {
                 Spacer(Modifier.height(6.dp))
+                Text(tr("تحقق من الإنترنت ثم أعد تشغيل التطبيق وحاول مرة أخرى", "Check your internet, then restart the app and try again"), color = Pal.soft, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                if (detail.isNotBlank()) { Spacer(Modifier.height(6.dp)); Text(detail, color = Pal.soft.copy(alpha = 0.55f), fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+            }
+            Spacer(Modifier.height(20.dp))
+            if (m.restart) {
+                GradButton(tr("إعادة تشغيل التطبيق", "Restart the app")) { restartApp(ctx) }
+                Spacer(Modifier.height(4.dp))
                 TextButton(onClose, Modifier.fillMaxWidth()) { Text(tr("إغلاق", "Close"), color = Pal.soft) }
+            } else {
+                GradButton(tr("حسناً", "OK"), onClick = onClose)
             }
         }
     }
 }
 
 @Composable fun Banner() {
-    Toast.msg?.let { m ->
-        if (m.err) {
-            ErrorDialog(m) { if (Toast.msg === m) Toast.msg = null }
-        } else {
-            Text(m.text, color = Color.White, modifier = Modifier.fillMaxWidth().padding(8.dp)
-                .background(Color(0xFF16A34A), RoundedCornerShape(14.dp)).padding(12.dp))
-            LaunchedEffect(m) { delay(4000); if (Toast.msg === m) Toast.msg = null }
-        }
-    }
+    Toast.msg?.let { m -> MessageDialog(m) { if (Toast.msg === m) Toast.msg = null } }
 }
 
 fun errText(e: Throwable): String {

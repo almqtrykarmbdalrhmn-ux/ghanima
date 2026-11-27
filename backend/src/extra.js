@@ -39,7 +39,7 @@ export default async function extra({ app, db, auth, tx, audit, err, wrap, bcryp
     const n = (await db.query(`SELECT count(*) FROM ledger WHERE user_id=$1 AND kind='ad_reward' AND created_at>=date_trunc('day',now())`, [q.user.id])).rows[0].count;
     const ago = (await db.query(`SELECT EXTRACT(EPOCH FROM (now()-max(created_at))) AS ago FROM ledger WHERE user_id=$1 AND kind='ad_reward'`, [q.user.id])).rows[0].ago;
     const wait = ago == null ? 0 : Math.max(0, Math.ceil((+st.ad_interval_seconds || 0) - +ago));
-    s.json({ enabled: st.ads_enabled === 'true' && adUnits().length > 0, today: +n, limit: +st.daily_ad_limit, wait, interval: +st.ad_interval_seconds || 0 }); }));
+    s.json({ enabled: st.ads_enabled === 'true' && adUnits().length > 0, today: +n, limit: +st.daily_ad_limit, wait, interval: +st.ad_interval_seconds || 0, app_open: st.app_open_enabled === 'true' }); }));
   // AdMob SSV callback (GET from Google). Always grants exactly 10 points; reward_amount from the callback is ignored.
   app.get('/ads/callback', wrap(async (q, s) => {
     const raw = q.originalUrl.split('?')[1] || ''; let ok = false;
@@ -75,7 +75,7 @@ export default async function extra({ app, db, auth, tx, audit, err, wrap, bcryp
   app.post('/admin/packages', A, wrap(async (q, s) => { const { game, amount, price_points } = q.body; if (!['pubg', 'freefire'].includes(game) || !(amount > 0) || !(price_points > 0)) throw err(400, 'invalid package');
     const r = await tx(async c => { const p = (await c.query('INSERT INTO packages(game,amount,price_points) VALUES($1,$2,$3) RETURNING *', [game, amount, price_points])).rows[0]; await audit(c, q.user.id, 'package_add', p); return p; }); s.json(r); }));
   app.delete('/admin/packages/:id', A, wrap(async (q, s) => { await tx(async c => { await c.query('UPDATE packages SET active=false WHERE id=$1', [q.params.id]); await audit(c, q.user.id, 'package_disable', { id: q.params.id }); }); s.sendStatus(204); })); // soft delete keeps order history valid
-  app.put('/admin/settings/:key', A, wrap(async (q, s) => { if (!['daily_ad_limit', 'ads_enabled'].includes(q.params.key)) throw err(400, 'unknown setting');
+  app.put('/admin/settings/:key', A, wrap(async (q, s) => { if (!['daily_ad_limit', 'ads_enabled', 'app_open_enabled'].includes(q.params.key)) throw err(400, 'unknown setting');
     await tx(async c => { await c.query('UPDATE settings SET value=$1 WHERE key=$2', [String(q.body.value), q.params.key]); await audit(c, q.user.id, 'setting', { key: q.params.key, value: q.body.value }); }); s.sendStatus(204); }));
   app.use('/admin-ui', express.static(path.join(path.dirname(fileURLToPath(import.meta.url)), '../public/admin')));
   return { notifyAdmins };

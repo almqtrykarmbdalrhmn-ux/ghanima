@@ -74,6 +74,7 @@ app.put('/admin/packages/:id', auth('admin'), wrap(async (q, s) => { const { amo
 // First start on an empty database: create tables and the initial packages from schema.sql.
 if (!(await db.query("SELECT to_regclass('public.users') AS t")).rows[0].t) { await db.query(fs.readFileSync(new URL('../schema.sql', import.meta.url), 'utf8')); console.log('schema applied'); }
 await db.query("INSERT INTO settings(key,value) VALUES('ad_interval_seconds','60') ON CONFLICT (key) DO NOTHING");
+await db.query("INSERT INTO settings(key,value) VALUES('app_open_enabled','false') ON CONFLICT (key) DO NOTHING");
 await db.query("UPDATE settings SET value='60' WHERE key='ad_interval_seconds' AND value='30'");
 await db.query("UPDATE settings SET value='200' WHERE key='daily_ad_limit' AND value IN ('20','1000')");
 // Admin account comes ONLY from server environment variables (never from app code): ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_CODE

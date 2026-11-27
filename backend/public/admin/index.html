@@ -6,7 +6,7 @@ input,select,button{padding:8px;margin:2px;border-radius:8px;border:1px solid #2
 <div class="card"><b>Users</b> <input id="q" placeholder="email or account ID"><button onclick="users()">Search</button><div id="users"></div></div>
 <div class="card" id="ledc" hidden></div>
 <div class="card"><b>Packages</b><div id="pk"></div><select id="ng"><option>pubg</option><option>freefire</option></select><input id="na" placeholder="amount" size=6><input id="np" placeholder="points" size=7><button onclick="addPk()">Add</button></div>
-<div class="card"><b>Settings</b> daily ad limit <input id="lim" size=6><button onclick="setS('daily_ad_limit',lim.value)">Save</button> ads enabled <select id="ae"><option>false</option><option>true</option></select><button onclick="setS('ads_enabled',ae.value)">Save</button></div></div></main>
+<div class="card"><b>Settings</b> daily ad limit <input id="lim" size=6><button onclick="setS('daily_ad_limit',lim.value)">Save</button> ads enabled <select id="ae"><option>false</option><option>true</option></select><button onclick="setS('ads_enabled',ae.value)">Save</button> app-open ad <select id="ao"><option>false</option><option>true</option></select><button onclick="setS('app_open_enabled',ao.value)">Save</button></div></div></main>
 <script>
 let T=sessionStorage.getItem('t'),seen=null;const $=i=>document.getElementById(i),E=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 function bad(m){const e=$('err');e.textContent=m;e.style.display='block';setTimeout(()=>e.style.display='none',4000)}

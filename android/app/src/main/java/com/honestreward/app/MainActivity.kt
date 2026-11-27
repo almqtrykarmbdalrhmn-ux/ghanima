@@ -34,6 +34,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Lang.load(this)
         Pal.load(this)
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        @Suppress("DEPRECATION") run { window.statusBarColor = android.graphics.Color.TRANSPARENT; window.navigationBarColor = android.graphics.Color.TRANSPARENT }
+        if (Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = false
         MobileAds.initialize(this) {}
         if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 1)
         setContent { GhanimaTheme { Surface(Modifier.fillMaxSize(), color = Color.Transparent) { Root() } } }
@@ -45,6 +48,20 @@ class MainActivity : ComponentActivity() {
     var splash by remember { mutableStateOf(true) }
     var logged by remember { mutableStateOf(Session.load(ctx)) }
     var adminPre by remember { mutableStateOf<String?>(null) }
+    val act = ctx as? android.app.Activity
+    val view = androidx.compose.ui.platform.LocalView.current
+    SideEffect {
+        if (act != null) {
+            val c = androidx.core.view.WindowCompat.getInsetsController(act.window, view)
+            val light = !Pal.dark && !splash
+            c.isAppearanceLightStatusBars = light; c.isAppearanceLightNavigationBars = light
+        }
+    }
+    LaunchedEffect(logged, splash) {
+        if (logged && !splash && act != null && !AppOpen.tried) {
+            try { if (Api.obj("GET", "/ads/status").optBoolean("app_open", false)) AppOpen.maybeShow(act) } catch (e: Exception) { }
+        }
+    }
     if (splash) { Splash { splash = false }; return }
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Pal.bgTop, Pal.bgBottom)))) {
         GeoBackground()
